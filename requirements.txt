@@ -5,3 +5,4 @@ matplotlib
 reportlab
 beautifulsoup4
 contourpy
+japanize-matplotlib
