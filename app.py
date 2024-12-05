@@ -1,76 +1,69 @@
-from flask import Flask, render_template, request, send_file, jsonify
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from io import BytesIO
-import requests
-from bs4 import BeautifulSoup
 import os
+import requests
+from flask import Flask, request, render_template, send_file, jsonify
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# NotoSansJP フォントの登録
-FONT_PATH = 'fonts/NotoSansJP-Regular.ttf'
-if not os.path.exists(FONT_PATH):
-    raise FileNotFoundError(f"フォントファイルが見つかりません: {FONT_PATH}")
-pdfmetrics.registerFont(TTFont('NotoSansJP', FONT_PATH))
+# フォントの登録 (NotoSansJP)
+pdfmetrics.registerFont(TTFont('NotoSansJP', 'NotoSansJP-Regular.ttf'))
 
 @app.route('/')
 def index():
+    """トップページを表示"""
     return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'])
-def analyze():
+def analyze_website():
+    """URLの解析処理"""
     url = request.form.get('url')
     if not url:
-        return jsonify({"error": "URLが指定されていません"}), 400
+        return jsonify({'error': 'URLが指定されていません。'}), 400
 
     try:
+        # ウェブサイトのHTMLを取得
         response = requests.get(url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        response.raise_for_status()
+        html_content = response.text
 
-        # サイトの簡易診断
-        title = soup.title.string if soup.title else "タイトルなし"
-        word_count = len(soup.get_text().split())
-        link_count = len(soup.find_all('a'))
+        # BeautifulSoupを使用して解析
+        soup = BeautifulSoup(html_content, 'html.parser')
+        title = soup.title.string if soup.title else "タイトルが見つかりません"
 
-        # レポートデータ作成
-        report = {
-            "URL": url,
-            "タイトル": title,
-            "単語数": word_count,
-            "リンク数": link_count
-        }
+        # パフォーマンス診断の簡易データ（例として文字数を使用）
+        word_count = len(html_content.split())
+        return jsonify({
+            'url': url,
+            'title': title,
+            'word_count': word_count,
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"ウェブサイトの取得中にエラーが発生しました: {e}"}), 500
 
-        # レポートPDF生成
-        pdf_buffer = BytesIO()
-        generate_pdf(report, pdf_buffer)
-        pdf_buffer.seek(0)
+@app.route('/generate', methods=['POST'])
+def generate_report():
+    """解析結果をPDFとして出力"""
+    url = request.form.get('url')
+    title = request.form.get('title')
+    word_count = request.form.get('word_count')
 
-        # PDFファイルを返す
-        return send_file(pdf_buffer, as_attachment=True, download_name='report.pdf', mimetype='application/pdf')
+    # PDF生成
+    pdf_path = "static/report.pdf"
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+    c.setFont('NotoSansJP', 12)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-def generate_pdf(report, buffer):
-    c = canvas.Canvas(buffer, pagesize=A4)
-    c.setFont("NotoSansJP", 12)
-
-    text = c.beginText(50, 800)
-    text.setFont("NotoSansJP", 12)
-    text.textLine("ウェブサイト診断レポート")
-    text.textLine("")
-    text.textLine(f"URL: {report['URL']}")
-    text.textLine(f"タイトル: {report['タイトル']}")
-    text.textLine(f"単語数: {report['単語数']}")
-    text.textLine(f"リンク数: {report['リンク数']}")
-    c.drawText(text)
-
-    c.showPage()
+    c.drawString(100, 750, f"URL: {url}")
+    c.drawString(100, 730, f"タイトル: {title}")
+    c.drawString(100, 710, f"総文字数: {word_count}")
+    c.drawString(100, 690, "これはサンプルのパフォーマンスレポートです。")
     c.save()
 
+    return send_file(pdf_path, as_attachment=True)
+
 if __name__ == '__main__':
-    # 開発環境では debug=True
-    app.run(debug=False)
+    port = int(os.environ.get('PORT', 5000))  # Heroku環境変数PORTを使用
+    app.run(host='0.0.0.0', port=port)

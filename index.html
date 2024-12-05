@@ -3,17 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>パフォーマンス診断ツール</title>
+    <title>AIパフォーマンス診断ツール</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>パフォーマンス診断ツール</h1>
-    <form action="/analyze" method="POST">
-        <label for="url">URLを入力してください:</label>
-        <input type="text" id="url" name="url" placeholder="https://example.com" required>
-        <button type="submit">診断する</button>
-    </form>
-    <footer>
-        <p>Powered by Flask & ReportLab</p>
-    </footer>
+    <div class="container mt-5">
+        <h1 class="text-center">AIパフォーマンス診断ツール</h1>
+        <p class="text-center">ウェブサイトのURLを入力してください。</p>
+
+        <!-- URL入力フォーム -->
+        <form id="analyze-form" method="POST">
+            <div class="form-group">
+                <label for="url">ウェブサイトURL:</label>
+                <input type="url" class="form-control" id="url" name="url" placeholder="例: https://example.com" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">解析する</button>
+        </form>
+
+        <!-- 結果表示エリア -->
+        <div id="result" class="mt-4" style="display: none;">
+            <h2>解析結果</h2>
+            <p><strong>URL:</strong> <span id="result-url"></span></p>
+            <p><strong>タイトル:</strong> <span id="result-title"></span></p>
+            <p><strong>総文字数:</strong> <span id="result-word-count"></span></p>
+
+            <!-- PDF生成フォーム -->
+            <form id="generate-pdf-form" method="POST">
+                <input type="hidden" name="url" id="pdf-url">
+                <input type="hidden" name="title" id="pdf-title">
+                <input type="hidden" name="word_count" id="pdf-word-count">
+                <button type="submit" class="btn btn-success btn-block">PDFレポートを生成</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.getElementById('analyze-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // フォームの送信をキャンセル
+            const urlInput = document.getElementById('url').value;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlInput })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`エラー: ${errorData.error}`);
+                    return;
+                }
+
+                const data = await response.json();
+                document.getElementById('result-url').textContent = data.url;
+                document.getElementById('result-title').textContent = data.title;
+                document.getElementById('result-word-count').textContent = data.word_count;
+
+                // PDF生成用の値を設定
+                document.getElementById('pdf-url').value = data.url;
+                document.getElementById('pdf-title').value = data.title;
+                document.getElementById('pdf-word-count').value = data.word_count;
+
+                // 結果エリアを表示
+                document.getElementById('result').style.display = 'block';
+            } catch (error) {
+                alert(`エラーが発生しました: ${error}`);
+            }
+        });
+
+        document.getElementById('generate-pdf-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // フォームの送信をキャンセル
+            const formData = new FormData(document.getElementById('generate-pdf-form'));
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert(`エラー: ${errorData.error}`);
+                    return;
+                }
+
+                // PDFをダウンロード
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'performance_report.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert(`エラーが発生しました: ${error}`);
+            }
+        });
+    </script>
 </body>
 </html>
