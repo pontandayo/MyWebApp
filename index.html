@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ウェブサイトパフォーマンス診断ツール</title>
+    <title>パフォーマンス診断ツール</title>
 </head>
 <body>
-    <h1>ウェブサイト パフォーマンス 診断ツール</h1>
-    <form action="/analyze" method="post">
-        <label for="url">ウェブサイトのURLを入力してください:</label><br>
-        <input type="url" id="url" name="url" placeholder="https://example.com" required style="width: 300px;">
-        <button type="submit">診断開始</button>
+    <h1>パフォーマンス診断ツール</h1>
+    <form action="/analyze" method="POST">
+        <label for="url">URLを入力してください:</label>
+        <input type="text" id="url" name="url" placeholder="https://example.com" required>
+        <button type="submit">診断する</button>
     </form>
+    <footer>
+        <p>Powered by Flask & ReportLab</p>
+    </footer>
 </body>
 </html>
