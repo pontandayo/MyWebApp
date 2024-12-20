@@ -1,0 +1,40 @@
+# Python関連
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 環境構築ツール
+env/
+venv/
+ENV/
+.venv/
+.idea/
+.vscode/
+
+# 環境変数ファイル
+.env
+
+# Flaskに関連するログやデバッグファイル
+instance/
+*.log
+*.sqlite3
+
+# その他OS関連
+.DS_Store
+Thumbs.db
+
+# Node.js関連（必要な場合）
+node_modules/
+npm-debug.log*
+
+# Pythonパッケージマネージャ関連
+Pipfile
+Pipfile.lock
+
+# コンテナ関連（必要な場合）
+docker-compose.override.yml
+
+# その他開発環境特有のファイル
+*.swp
+*.swo
