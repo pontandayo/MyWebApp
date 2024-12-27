@@ -47,9 +47,11 @@ pip install -r requirements.txt
 ### 3️⃣ 環境変数の設定
 プロジェクトルートに `.env` ファイルを作成し、以下を記載します：
 ```env
-PAGESPEED_API_KEY=あなたのGoogle APIキー
+PAGESPEED_API_KEY=あなたのpagespeed APIキー
 SECRET_KEY=ランダムな文字列
 ```
+---pagespeed APIのドキュメント
+https://developers.google.com/speed/docs/insights/v5/get-started
 
 ### 4️⃣ アプリケーションの起動
 以下のコマンドでローカルサーバーを起動します：
